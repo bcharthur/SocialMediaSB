@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Post Application</title>
+
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        .post-container {
+            margin-top: 20px;
+        }
+        .post-messages {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .post-message {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .post-header img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        .post-content {
+            flex-grow: 1;
+            word-wrap: break-word;
+        }
+        .post-footer {
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .comments {
+            margin-top: 10px;
+        }
+        .comment {
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
+        .comment-form {
+            display: flex;
+            flex-direction: column;
+            margin-top: 10px;
+            gap: 10px;
+        }
+        .comment-form input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .post-header img {
+                width: 40px;
+                height: 40px;
+            }
+            .post-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .comment-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main>
+    <div class="container post-container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <form id="postForm">
+                        <div class="form-group">
+                            <input type="hidden" id="sender" name="sender" placeholder="Your name" class="form-control" th:value="${#ctx.session.currentUser.pseudo}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="message" name="message" placeholder="Type a message" class="form-control" required>
+                        </div>
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-success">Send</button>
+                        </div>
+                    </form>
+                    <div class="card-header bg-primary text-white">
+                        Post Room
+                    </div>
+                    <div class="card-body">
+                        <div id="post">
+                            <div class="post-messages" id="postMessages"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="admin-buttons-template" sec:authorize="hasAuthority('ADMIN')" style="display: none;">
+    <button class="btn btn-sm btn-primary edit-button">Edit</button>
+    <button class="btn btn-sm btn-warning hide-button">Hide</button>
+    <button class="btn btn-sm btn-danger delete-button">Delete</button>
+</div>
+
+<div id="modo-buttons-template" sec:authorize="hasAuthority('MODO')" style="display: none;">
+    <button class="btn btn-sm btn-primary edit-button">Edit</button>
+    <button class="btn btn-sm btn-warning hide-button">Hide</button>
+</div>
+
+<div th:replace="~{integration/scripts}"></div>
+
+<script>
+    var stompClient = null;
+    var messagesMap = {};
+
+    function connect() {
+        var socket = new SockJS('/gs-guide-websocket');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/posts', function (message) {
+                var postMessage = JSON.parse(message.body);
+                updatePostMessage(postMessage);
+            });
+            stompClient.subscribe('/topic/posts/delete', function (message) {
+                var messageId = JSON.parse(message.body);
+                removePostMessage(messageId);
+            });
+        });
+    }
+
+    function updatePostMessage(message) {
+        if (messagesMap[message.id]) {
+            updateMessageContent(message);
+        } else {
+            showPostMessage(message);
+        }
+    }
+
+    function showPostMessage(message) {
+        messagesMap[message.id] = message;
+        var messagePostElement = createPostMessageElement(message);
+        $("#postMessages").prepend(messagePostElement);  // Prepend to show the most recent message at the top
+
+        messagePostElement.find(".edit-button").on("click", function () {
+            editPostMessage(message.id, message.post);
+        });
+
+        messagePostElement.find(".hide-button").on("click", function () {
+            hidePostMessage(message.id);
+        });
+
+        messagePostElement.find(".delete-button").on("click", function () {
+            deletePostMessage(message.id);
+        });
+    }
+
+    function createPostMessageElement(message) {
+        var likedByUser = message.likedBy.includes($("#sender").val());
+        var likeButton = likedByUser ? "<button class='btn btn-sm btn-danger unlike-button'>Unlike</button>" : "<button class='btn btn-sm btn-primary like-button'>Like</button>";
+
+        var commentsHtml = '';
+        var comments = Array.from(message.comments).sort((a, b) => a.order - b.order);
+        comments.forEach(comment => {
+            commentsHtml += "<div class='comment'><strong>" + comment.sender + ":</strong> " + comment.comment + "</div>";
+        });
+
+        var messagePostElement = $("<div class='post-message' data-id='" + message.id + "'>" +
+            "<div class='post-header'>" +
+            "<img src='https://via.placeholder.com/50' alt='User Avatar'>" +
+            "<div class='post-content'><strong>" + message.sender + ":</strong> " + message.post + "</div>" +
+            "</div>" +
+            "<div class='post-footer buttons-container'>" +
+            likeButton + " <span class='like-count'>" + message.likedBy.length + " likes</span>" +
+            "</div>" +
+            "<div class='comments'>" + commentsHtml + "</div>" +
+            "<div class='comment-form'>" +
+            "<input type='text' class='form-control comment-input' placeholder='Write a comment...'>" +
+            "<button class='btn btn-sm btn-primary submit-comment'>Comment</button>" +
+            "</div>" +
+            "</div>");
+
+        // Inject Admin Buttons if user is an admin
+        var adminButtons = $("#admin-buttons-template").html();
+        if (adminButtons) {
+            messagePostElement.find(".buttons-container").append(adminButtons);
+        }
+
+        // Inject Modo Buttons if user is a moderator
+        var modoButtons = $("#modo-buttons-template").html();
+        if (modoButtons) {
+            messagePostElement.find(".buttons-container").append(modoButtons);
+        }
+
+        messagePostElement.find(".like-button").on("click", function () {
+            likePost(message.id);
+        });
+
+        messagePostElement.find(".unlike-button").on("click", function () {
+            unlikePost(message.id);
+        });
+
+        messagePostElement.find(".submit-comment").on("click", function () {
+            var commentText = messagePostElement.find(".comment-input").val();
+            if (commentText.trim() !== "") {
+                addComment(message.id, commentText);
+                messagePostElement.find(".comment-input").val("");  // Clear input field
+            }
+        });
+
+        return messagePostElement;
+    }
+
+    function updateMessageContent(message) {
+        messagesMap[message.id] = message;
+        var messagePostElement = $("div.post-message[data-id='" + message.id + "']");
+        if (messagePostElement.length) {
+            messagePostElement.find(".post-content").html("<strong>" + message.sender + ":</strong> " + message.post);
+            messagePostElement.find(".like-count").text(message.likedBy.length + " likes");
+
+            var likedByUser = message.likedBy.includes($("#sender").val());
+            var likeButton = likedByUser ? "<button class='btn btn-sm btn-danger unlike-button'>Unlike</button>" : "<button class='btn btn-sm btn-primary like-button'>Like</button>";
+            messagePostElement.find(".buttons-container").html(likeButton + " <span class='like-count'>" + message.likedBy.length + " likes</span>");
+
+            messagePostElement.find(".like-button").on("click", function () {
+                likePost(message.id);
+            });
+
+            messagePostElement.find(".unlike-button").on("click", function () {
+                unlikePost(message.id);
+            });
+
+            var commentsHtml = '';
+            var comments = Array.from(message.comments).sort((a, b) => a.order - b.order);
+            comments.forEach(comment => {
+                commentsHtml += "<div class='comment'><strong>" + comment.sender + ":</strong> " + comment.comment + "</div>";
+            });
+            messagePostElement.find(".comments").html(commentsHtml);
+
+            messagePostElement.find(".submit-comment").on("click", function () {
+                var commentText = messagePostElement.find(".comment-input").val();
+                if (commentText.trim() !== "") {
+                    addComment(message.id, commentText);
+                    messagePostElement.find(".comment-input").val("");  // Clear input field
+                }
+            });
+        } else {
+            showPostMessage(message);
+        }
+    }
+
+    function removePostMessage(id) {
+        delete messagesMap[id];
+        $("div.post-message[data-id='" + id + "']").remove();
+    }
+
+    function editPostMessage(id, oldPostMessage) {
+        var newPostMessage = prompt("Edit your message:", oldPostMessage);
+        if (newPostMessage !== null) {
+            $.ajax({
+                url: "/api/posts/update/" + id,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(newPostMessage),
+                success: function (updatedPostMessage) {
+                    updateMessageContent(updatedPostMessage);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Failed to update message:", textStatus, errorThrown);
+                }
+            });
+        }
+    }
+
+    function hidePostMessage(id) {
+        $.ajax({
+            url: "/api/posts/hide/" + id,
+            type: "POST",
+            success: function (hiddenPostMessage) {
+                updateMessageContent(hiddenPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to hide message:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function deletePostMessage(id) {
+        $.ajax({
+            url: "/api/posts/delete/" + id,
+            type: "POST",
+            success: function () {
+                removePostMessage(id);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to delete message:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function likePost(postId) {
+        $.ajax({
+            url: "/api/posts/like/" + postId,
+            type: "POST",
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to like post:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function unlikePost(postId) {
+        $.ajax({
+            url: "/api/posts/unlike/" + postId,
+            type: "POST",
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to unlike post:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function addComment(postId, commentText) {
+        $.ajax({
+            url: "/api/posts/comment/" + postId,
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 'comment': commentText }),
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to add comment:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        var token = $("meta[name='_csrf']").attr("content");
+        var header = $("meta[name='_csrf_header']").attr("content");
+
+        $(document).ajaxSend(function (e, xhr, options) {
+            xhr.setRequestHeader(header, token);
+        });
+
+        connect();
+
+        $("#postForm").on("submit", function (e) {
+            e.preventDefault();
+
+            var sender = $("#sender").val();
+            var message = $("#message").val();
+
+            stompClient.send("/app/sendPost", {}, JSON.stringify({ 'sender': sender, 'post': message }));
+
+            $("#message").val('');
+        });
+
+        $.ajax({
+            url: "/api/posts/list",
+            type: "GET",
+            success: function (data) {
+                if (Array.isArray(data)) {
+                    data.forEach(showPostMessage);  // Show messages in the order received
+                } else {
+                    console.error("Data is not an array:", data);
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to fetch post messages:", textStatus, errorThrown);
+            }
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>Discussion avec [[${receiver}]]</title>
+
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        .chat-container {
+            margin-top: 20px;
+            max-width: 600px; /* Max width for larger screens */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .chat-messages {
+            height: 500px; /* Decreased height for better fit on small screens */
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+            clear: both;
+        }
+        .chat-message.sent {
+            background-color: #007bff;
+            align-self: flex-end;
+            text-align: right;
+            color: white;
+            float: right;
+        }
+        .chat-message.received {
+            background-color: #f1f1f1;
+            align-self: flex-start;
+            text-align: left;
+            float: left;
+            color: black;
+        }
+        .chat-message.sent .sender {
+            font-weight: bold;
+        }
+        .chat-message.received .sender {
+            font-weight: normal;
+        }
+        .chat-message .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .form-group input {
+            border-radius: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .btn-success {
+            border-radius: 20px;
+            padding: 5px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .chat-messages {
+                height: 300px; /* Adjust height for smaller screens */
+            }
+            .chat-container {
+                padding: 10px; /* Add padding to make it fit nicely on small screens */
+            }
+            .chat-message {
+                max-width: 100%; /* Full width for chat bubbles */
+            }
+            .btn-success {
+                width: 100%; /* Full width for send button */
+                margin-top: 10px; /* Add margin to separate from input */
+            }
+            .form-group input {
+                width: 100%; /* Full width for input field */
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main>
+    <div class="container chat-container">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Discussion avec <strong>[[${receiver}]]</strong>
+                    </div>
+
+                    <div class="card-body">
+                        <div id="chat">
+                            <div class="chat-messages" id="chatMessages"></div>
+                        </div>
+                        <form id="chatForm">
+                            <input type="hidden" id="sender" name="sender" th:value="${sender}" readonly>
+                            <input type="hidden" id="receiver" name="receiver" th:value="${receiver}" readonly>
+                            <div class="form-group">
+                                <input type="text" id="message" name="message" placeholder="Type a message" class="form-control" required>
+                            </div>
+                            <div class="form-group text-center">
+                                <button type="submit" class="btn btn-success">Send</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/gs-guide-websocket');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            var sender = document.getElementById('sender').value;
+            var receiver = document.getElementById('receiver').value;
+
+            var sortedNames = [sender, receiver].sort();
+            var subscriptionPath = '/topic/chats/' + sortedNames[0] + '/' + sortedNames[1];
+
+            // Subscribe to the correct topic to receive messages
+            stompClient.subscribe(subscriptionPath, function (message) {
+                var chat = JSON.parse(message.body);
+                showChatMessage(chat);
+            });
+
+            // Subscribe to receive notifications
+            stompClient.subscribe('/topic/chats/' + sender + '/notifications', function (message) {
+                var notification = JSON.parse(message.body);
+                showNotification(notification);
+            });
+
+            // Load existing messages for the conversation
+            loadConversation(sender, receiver);
+        });
+    }
+
+    function showNotification(notification) {
+        // Logic to display notification, e.g., using a toast message
+        alert("New message from " + notification.sender + ": " + notification.message);
+    }
+
+
+    function showChatMessage(message) {
+        var messageElement = createChatMessageElement(message);
+        $("#chatMessages").append(messageElement);
+        $("#chatMessages").scrollTop($("#chatMessages")[0].scrollHeight); // Auto-scroll to bottom
+    }
+
+    function createChatMessageElement(chat) {
+        var sender = document.getElementById('sender').value;
+        var isSender = chat.sender === sender;
+        var messageElement = $("<div class='chat-message " + (isSender ? "sent" : "received") + "'>" +
+            "<div>" + chat.message + "</div>" +
+            "<div class='timestamp'>" + new Date(chat.createdDate).toLocaleString() + "</div>" +
+            "</div>");
+        return messageElement;
+    }
+
+    function loadConversation(sender, receiver) {
+        $.ajax({
+            url: `/api/chats/conversation?sender=${sender}&receiver=${receiver}`,
+            type: "GET",
+            success: function (data) {
+                $("#chatMessages").empty();  // Clear current messages
+                data.forEach(showChatMessage);   // Display new messages
+                markMessagesAsRead(sender, receiver); // Mark messages as read
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to fetch chat messages:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function markMessagesAsRead(sender, receiver) {
+        $.ajax({
+            url: `/api/chats/markAsRead?sender=${sender}&receiver=${receiver}`,
+            type: "POST",
+            success: function () {
+                console.log("Messages marked as read");
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to mark messages as read:", textStatus, errorThrown);
+            }
+        });
+    }
+
+
+    $("#chatForm").on("submit", function (e) {
+        e.preventDefault();
+
+        var sender = $("#sender").val();
+        var receiver = $("#receiver").val();
+        var message = $("#message").val();
+
+        stompClient.send("/app/sendMessage", {}, JSON.stringify({
+            'sender': sender,
+            'receiver': receiver,
+            'message': message
+        }));
+
+        $("#message").val('');
+    });
+
+    $(document).ready(function () {
+        connect();   // Establish WebSocket connection
+    });
+</script>
+</body>
+</html>

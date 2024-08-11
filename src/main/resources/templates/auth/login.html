@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login page</title>
+    <div th:replace="~{integration/links}"></div>
+
+    <style>
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            main.container {
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            input[type="submit"],
+            .btn-secondary {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <h2>Login page</h2>
+    <form th:action="@{/login}" method="post">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control" autofocus="autofocus" required />
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required />
+        </div>
+        <br>
+        <div class="form-group">
+            <input type="submit" value="Connexion" class="btn btn-primary"/>
+            <a class="btn btn-secondary" data-th-href="@{/}">Accueil</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

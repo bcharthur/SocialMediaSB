@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Accueil</title>
+    <div th:replace="~{integration/links}"></div>
+
+    <style>
+        .post-container {
+            margin-top: 20px;
+        }
+        .post-messages {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        .post-message {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #ffffff;
+        }
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .post-header img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        .post-content {
+            margin-bottom: 15px;
+        }
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comments {
+            margin-top: 10px;
+        }
+        .comment {
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .post-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .post-header img {
+                margin-bottom: 10px;
+            }
+            .post-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .post-footer .btn {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <div class="container post-container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-3" sec:authorize="isAuthenticated()">
+                    <div class="card-body">
+                        <form id="postForm" enctype="multipart/form-data">
+                            <div class="form-group d-flex align-items-center">
+                                <img src='https://via.placeholder.com/50' alt='User Avatar' class='rounded-circle me-2'>
+                                <strong th:text="${#ctx.session.currentUser.pseudo}" class="ml-2"></strong>
+                                <input type="hidden" id="sender" name="sender" class="form-control" th:value="${#ctx.session.currentUser.pseudo}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input type="text" id="message" name="message" placeholder="Type a message" class="form-control">
+                                    <div class="input-group-append">
+                                        <button type="submit" id="sendButton" class="btn btn-success"><i class="fas fa-paper-plane"></i> Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <input type="file" id="image" name="image" class="form-control">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="post">
+                            <div class="post-messages" id="postMessages"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-buttons-template" sec:authorize="hasAuthority('ADMIN')" style="display: none;">
+        <button class="btn btn-sm btn-primary edit-button"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button class="btn btn-sm btn-warning hide-button"><i class="fa-solid fa-eye-slash"></i></button>
+        <button class="btn btn-sm btn-danger delete-button"><i class="fa-solid fa-trash"></i></button>
+    </div>
+
+    <div id="modo-buttons-template" sec:authorize="hasAuthority('MODO')" style="display: none;">
+        <button class="btn btn-sm btn-primary edit-button"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button class="btn btn-sm btn-warning hide-button"><i class="fa-solid fa-eye-slash"></i></button>
+    </div>
+</main>
+
+<div th:replace="~{integration/scripts}"></div>
+<script>
+    var stompClient = null;
+    var messagesMap = {};
+
+    function connect() {
+        var socket = new SockJS('/gs-guide-websocket');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/posts', function (message) {
+                var postMessage = JSON.parse(message.body);
+                updatePostMessage(postMessage);
+            });
+            stompClient.subscribe('/topic/posts/delete', function (message) {
+                var messageId = JSON.parse(message.body);
+                removePostMessage(messageId);
+            });
+        });
+    }
+
+    function updatePostMessage(message) {
+        if (messagesMap[message.id]) {
+            updateMessageContent(message);
+        } else {
+            showPostMessage(message);
+        }
+    }
+
+    function showPostMessage(message) {
+        messagesMap[message.id] = message;
+        var messagePostElement = createPostMessageElement(message);
+        $("#postMessages").prepend(messagePostElement);  // Prepend to show the most recent message at the top
+
+        attachEventHandlers(messagePostElement, message);
+    }
+
+    function createPostMessageElement(message) {
+        var likedByUser = message.likedBy.includes($("#sender").val());
+        var likeButton = likedByUser ? "<button class='btn btn-sm unlike-button'><i class='fa-solid fa-heart'></i> " + message.likedBy.length + "</button>" : "<button class='btn btn-sm like-button'><i class='fa-regular fa-heart'></i> " + message.likedBy.length + "</button>";
+
+        var commentsHtml = '';
+        var comments = Array.from(message.comments).sort((a, b) => a.order - b.order);
+        comments.forEach(comment => {
+            commentsHtml += "<div class='comment'><strong>" + comment.sender + ":</strong> " + comment.comment + "</div>";
+        });
+
+        var timeElapsed = moment(message.timestamp).fromNow();
+
+        var imageHtml = message.imageUrl ? "<img src='" + message.imageUrl + "' alt='Post Image' class='img-fluid mt-2'>" : "";
+
+        var contentHtml = message.post ? "<p>" + message.post + "</p>" : "";
+
+        var messagePostElement = $(
+            "<div class='post-message card mb-3' data-id='" + message.id + "'>" +
+            "<div class='card-body'>" +
+            "<div class='post-header d-flex justify-content-between align-items-center'>" +
+            "<div class='d-flex align-items-center'>" +
+            "<img src='https://via.placeholder.com/50' alt='User Avatar' class='rounded-circle me-2'>" +
+            "<div>" +
+            "<div class='post-sender'><strong>" + message.sender + "</strong> - <small class='text-muted'>posté y a " + timeElapsed + "</small></div>" +
+            "</div>" +
+            "</div>" +
+            "<div class='dropdown'>" +
+            "<a class='nav-link dropdown-toggle' href='#' role='button' data-bs-toggle='dropdown' aria-expanded='false'>" +
+            "<i class='fas fa-ellipsis-v'></i>" +
+            "</a>" +
+            "<ul class='dropdown-menu dropdown-menu-end'>" +
+            "<li><a class='dropdown-item' href='#'>1</a></li>" +
+            "<li><a class='dropdown-item' href='#'>2</a></li>" +
+            "<li><a class='dropdown-item' href='#'>3</a></li>" +
+            "</ul>" +
+            "</div>" +
+            "</div>" +
+            "<div class='post-content mt-2'>" +
+            contentHtml +
+            imageHtml +
+            "</div>" +
+            "<div class='post-footer mt-2'>" +
+            likeButton +
+            " <button class='btn btn-sm comment-button' data-bs-toggle='collapse' data-bs-target='#comments-" + message.id + ", #comments-form-" + message.id + "'><i class='fa-regular fa-comment'></i> <span class='comment-count'>" + message.comments.length + "</span></button>" +
+            " <span class='like-count ms-2'></span>" +
+            "</div>" +
+            "<div class='comments collapse' id='comments-" + message.id + "'>" + commentsHtml + "</div>" +
+            "<div class='comment-form mt-2 collapse' id='comments-form-" + message.id + "'>" +
+            "<input type='text' class='form-control comment-input mb-2' placeholder='Write a comment...'>" +
+            "<button class='btn btn-sm btn-primary submit-comment'>Comment</button>" +
+            "</div>" +
+            "</div>" +
+            "</div>"
+        );
+
+        // Inject Admin Buttons if user is an admin
+        var adminButtons = $("#admin-buttons-template").html();
+        if (adminButtons) {
+            messagePostElement.find(".post-footer").append(adminButtons);
+        }
+
+        // Inject Modo Buttons if user is a moderator
+        var modoButtons = $("#modo-buttons-template").html();
+        if (modoButtons) {
+            messagePostElement.find(".post-footer").append(modoButtons);
+        }
+
+        return messagePostElement;
+    }
+
+    function attachEventHandlers(element, message) {
+        element.find(".edit-button").on("click", function () {
+            editPostMessage(message.id, message.post);
+        });
+
+        element.find(".hide-button").on("click", function () {
+            hidePostMessage(message.id);
+        });
+
+        element.find(".delete-button").on("click", function () {
+            deletePostMessage(message.id);
+        });
+
+        element.find(".like-button").on("click", function () {
+            likePost(message.id);
+        });
+
+        element.find(".unlike-button").on("click", function () {
+            unlikePost(message.id);
+        });
+
+        element.find(".comment-button").on("click", function () {
+            var targetId = $(this).attr("data-target");
+            $(targetId).collapse('toggle');
+        });
+
+        element.find(".submit-comment").on("click", function () {
+            var commentText = element.find(".comment-input").val();
+            if (commentText.trim() !== "") {
+                addComment(message.id, commentText);
+                element.find(".comment-input").val('');  // Clear input field
+            }
+        });
+    }
+
+    function updateMessageContent(message) {
+        messagesMap[message.id] = message;
+        var messagePostElement = $("div.post-message[data-id='" + message.id + "']");
+        if (messagePostElement.length) {
+            var contentHtml = message.post ? "<p>" + message.post + "</p>" : "";
+            var imageHtml = message.imageUrl ? "<img src='" + message.imageUrl + "' alt='Post Image' class='img-fluid mt-2'>" : "";
+
+            messagePostElement.find(".post-content").html(contentHtml + imageHtml);
+            messagePostElement.find(".like-count").text(message.likedBy.length + " likes");
+            messagePostElement.find(".comment-count").text(message.comments.length);
+
+            var likedByUser = message.likedBy.includes($("#sender").val());
+            var likeButton = likedByUser ? "<button class='btn btn-sm unlike-button'><i class='fa-solid fa-heart'></i> " + message.likedBy.length + "</button>" : "<button class='btn btn-sm like-button'><i class='fa-regular fa-heart'></i> " + message.likedBy.length + "</button>";
+            messagePostElement.find(".post-footer").html(
+                likeButton +
+                " <button class='btn btn-sm comment-button' data-bs-toggle='collapse' data-bs-target='#comments-" + message.id + ", #comments-form-" + message.id + "'><i class='fa-regular fa-comment'></i> <span class='comment-count'>" + message.comments.length + "</span></button>" +
+                " <span class='like-count ms-2'></span>"
+            );
+
+            // Inject Admin Buttons if user is an admin
+            var adminButtons = $("#admin-buttons-template").html();
+            if (adminButtons) {
+                messagePostElement.find(".post-footer").append(adminButtons);
+            }
+
+            // Inject Modo Buttons if user is a moderator
+            var modoButtons = $("#modo-buttons-template").html();
+            if (modoButtons) {
+                messagePostElement.find(".post-footer").append(modoButtons);
+            }
+
+            attachEventHandlers(messagePostElement, message);
+
+            var commentsHtml = '';
+            var comments = Array.from(message.comments).sort((a, b) => a.order - b.order);
+            comments.forEach(comment => {
+                commentsHtml += "<div class='comment'><strong>" + comment.sender + ":</strong> " + comment.comment + "</div>";
+            });
+            messagePostElement.find(".comments").html(commentsHtml);
+        } else {
+            showPostMessage(message);
+        }
+    }
+
+    function removePostMessage(id) {
+        delete messagesMap[id];
+        $("div.post-message[data-id='" + id + "']").remove();
+    }
+
+    function editPostMessage(id, oldPostMessage) {
+        var newPostMessage = prompt("Edit your message:", oldPostMessage);
+        if (newPostMessage !== null) {
+            $.ajax({
+                url: "/api/posts/update/" + id,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(newPostMessage),
+                success: function (updatedPostMessage) {
+                    updateMessageContent(updatedPostMessage);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Failed to update message:", textStatus, errorThrown);
+                }
+            });
+        }
+    }
+
+    function hidePostMessage(id) {
+        $.ajax({
+            url: "/api/posts/hide/" + id,
+            type: "POST",
+            success: function (hiddenPostMessage) {
+                // Update the content of the post to indicate it has been hidden
+                var messagePostElement = $("div.post-message[data-id='" + id + "']");
+                if (messagePostElement.length) {
+                    messagePostElement.find(".post-content").html("<p>Ce post a été masqué par un modérateur</p>");
+                    messagePostElement.find(".post-content").find("img").remove(); // Remove any image
+                    messagePostElement.find(".post-footer").find(".like-button, .unlike-button, .comment-button").remove(); // Remove like and comment buttons
+                }
+                updateMessageContent(hiddenPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to hide message:", textStatus, errorThrown);
+            }
+        });
+    }
+
+
+    function deletePostMessage(id) {
+        $.ajax({
+            url: "/api/posts/delete/" + id,
+            type: "POST",
+            success: function () {
+                removePostMessage(id);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to delete message:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function likePost(postId) {
+        $.ajax({
+            url: "/api/posts/like/" + postId,
+            type: "POST",
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to like post:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function unlikePost(postId) {
+        $.ajax({
+            url: "/api/posts/unlike/" + postId,
+            type: "POST",
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to unlike post:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    function addComment(postId, commentText) {
+        $.ajax({
+            url: "/api/posts/comment/" + postId,
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ 'comment': commentText }),
+            success: function (updatedPostMessage) {
+                updateMessageContent(updatedPostMessage);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to add comment:", textStatus, errorThrown);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        var token = $("meta[name='_csrf']").attr("content");
+        var header = $("meta[name='_csrf_header']").attr("content");
+
+        $(document).ajaxSend(function (e, xhr, options) {
+            xhr.setRequestHeader(header, token);
+        });
+
+        connect();
+
+        var isSubmitting = false;  // Flag to prevent multiple submissions
+
+        $("#postForm").on("submit", function (e) {
+            e.preventDefault();
+
+            if (isSubmitting) {
+                return;  // Prevent further submissions if already submitting
+            }
+
+            if (!stompClient || !stompClient.connected) {
+                console.error("WebSocket connection is not established.");
+                return;
+            }
+
+            isSubmitting = true;  // Set the flag to true
+
+            var sendButton = $("#sendButton");
+            sendButton.prop("disabled", true);  // Disable the button to prevent double submission
+
+            var sender = $("#sender").val();
+            var message = $("#message").val();
+            var image = $("#image")[0].files[0];
+
+            var formData = new FormData();
+            formData.append("sender", sender);
+            formData.append("post", message);
+            if (image) {
+                formData.append("image", image);
+            }
+
+            $.ajax({
+                url: "/api/posts/send",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    $("#message").val('');
+                    $("#image").val('');
+                    sendButton.prop("disabled", false);  // Re-enable the button
+                    isSubmitting = false;  // Reset the flag
+                    stompClient.send("/app/sendPost", {}, JSON.stringify(data));
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Failed to send post:", textStatus, errorThrown);
+                    sendButton.prop("disabled", false);  // Re-enable the button even if there's an error
+                    isSubmitting = false;  // Reset the flag
+                }
+            });
+        });
+
+        $.ajax({
+            url: "/api/posts/list",
+            type: "GET",
+            success: function (data) {
+                if (Array.isArray(data)) {
+                    data.forEach(showPostMessage);  // Show messages in the order received
+                } else {
+                    console.error("Data is not an array:", data);
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("Failed to fetch post messages:", textStatus, errorThrown);
+            }
+        });
+    });
+</script>
+</body>
+</html>

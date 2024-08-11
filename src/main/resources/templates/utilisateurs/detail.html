@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail de l'utilisateur</title>
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-header img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 1rem;
+        }
+
+        .profile-details {
+            width: 100%;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+            padding: 0.5rem 0;
+        }
+
+        .detail-item label {
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .profile-container {
+                align-items: flex-start;
+            }
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .profile-info {
+                margin-left: 0;
+            }
+            .profile-details {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <h2 class="inline-title">Détails de l'utilisateur : <span th:text="${utilisateur.pseudo}"></span></h2>
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <img src="https://via.placeholder.com/150" alt="User Avatar" class="profile-img rounded-circle">
+        </div>
+        <div class="col-md-9">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="posts-tab" data-toggle="tab" href="#posts" role="tab" aria-controls="posts" aria-selected="true">Posts Envoyés</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="likes-tab" data-toggle="tab" href="#likes" role="tab" aria-controls="likes" aria-selected="false">Posts Likés</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="comments-tab" data-toggle="tab" href="#comments" role="tab" aria-controls="comments" aria-selected="false">Commentaires Envoyés</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="false">Paramètre Compte</a>
+                </li>
+            </ul>
+            <div class="tab-content mt-3" id="myTabContent">
+                <!-- Tab 1: Posts Envoyés -->
+                <div class="tab-pane fade show active" id="posts" role="tabpanel" aria-labelledby="posts-tab">
+                    <ul class="list-group">
+                        <li class="list-group-item" th:each="post : ${posts}">
+                            <p th:text="${post.post}"></p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tab 2: Posts Likés -->
+                <div class="tab-pane fade" id="likes" role="tabpanel" aria-labelledby="likes-tab">
+                    <ul class="list-group">
+                        <li class="list-group-item" th:each="post : ${likedPosts}">
+                            <p th:text="${post.post}"></p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tab 3: Commentaires Envoyés -->
+                <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                    <ul class="list-group">
+                        <li class="list-group-item" th:each="comment : ${comments}">
+                            <p th:text="${comment.comment}"></p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tab 4: Paramètre Compte -->
+                <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                    <a class="btn btn-primary" th:href="@{|/utilisateurs/${utilisateur.no_utilisateur}/edit|}">Modifier le compte</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group mt-4">
+        <a class="btn btn-secondary" href="/">Retour à l'accueil</a>
+    </div>
+</main>
+
+<div th:replace="~{integration/scripts}"></div>
+</body>
+</html>

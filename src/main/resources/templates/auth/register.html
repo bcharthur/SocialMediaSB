@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscription</title>
+
+    <div th:replace="~{integration/links}"></div>
+
+    <style>
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        .text-danger {
+            font-size: 0.875em;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            main.container {
+                padding: 15px;
+            }
+
+            h2.inline-title {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <a class="btn btn-secondary mb-3" th:href="@{/}">Retour à l'accueil</a>
+    <h2 class="inline-title" th:if="${utilisateur.no_utilisateur == 0}">Ajout de l'utilisateur</h2>
+
+    <!-- Block to show error messages -->
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Block to show success messages -->
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <span th:text="${successMessage}"></span>
+    </div>
+
+    <form th:action="@{/register/creer}" th:object="${utilisateur}" method="post">
+        <input type="hidden" id="no_utilisateur" th:field="*{no_utilisateur}"/>
+
+        <div class="form-group">
+            <label for="pseudo">Pseudo:</label>
+            <input type="text" id="pseudo" th:field="*{pseudo}" class="form-control" th:classappend="${#fields.hasErrors('pseudo')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('pseudo')}" th:errors="*{pseudo}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="nom">Nom:</label>
+            <input type="text" id="nom" th:field="*{nom}" class="form-control" th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="prenom">Prenom:</label>
+            <input type="text" id="prenom" th:field="*{prenom}" class="form-control" th:classappend="${#fields.hasErrors('prenom')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('prenom')}" th:errors="*{prenom}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="text" id="email" th:field="*{email}" class="form-control" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="telephone">Téléphone:</label>
+            <input type="text" id="telephone" th:field="*{telephone}" class="form-control" th:classappend="${#fields.hasErrors('telephone')} ? 'is-invalid' : ''"/>
+            <div class="text-danger" th:if="${#fields.hasErrors('telephone')}" th:errors="*{telephone}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="rue">Rue:</label>
+            <input type="text" id="rue" th:field="*{rue}" class="form-control" th:classappend="${#fields.hasErrors('rue')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('rue')}" th:errors="*{rue}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="code_postal">Code Postal:</label>
+            <input type="text" id="code_postal" th:field="*{code_postal}" class="form-control" th:classappend="${#fields.hasErrors('code_postal')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('code_postal')}" th:errors="*{code_postal}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="ville">Ville:</label>
+            <input type="text" id="ville" th:field="*{ville}" class="form-control" th:classappend="${#fields.hasErrors('ville')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('ville')}" th:errors="*{ville}"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="mot_de_passe">Mot de Passe:</label>
+            <input type="password" id="mot_de_passe" th:field="*{mot_de_passe}" class="form-control" th:classappend="${#fields.hasErrors('mot_de_passe')} ? 'is-invalid' : ''" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('mot_de_passe')}" th:errors="*{mot_de_passe}"></div>
+        </div>
+        <br>
+        <input type="hidden" id="role" name="role" th:value="${role != null ? role : 'USER'}"/>
+        <button type="submit" class="btn btn-primary">S'inscrire</button>
+    </form>
+</main>
+</body>
+</html>

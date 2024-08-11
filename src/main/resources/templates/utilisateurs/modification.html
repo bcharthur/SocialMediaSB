@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Modification d'un utilisateur</title>
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        @media (max-width: 768px) {
+            .form-group {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <h2 class="inline-title">Modification de l'utilisateur : <span th:text="${utilisateur.pseudo}"></span></h2>
+    <form th:action="@{/utilisateurs/edit}" th:object="${utilisateur}" method="post">
+        <input type="hidden" th:field="*{no_utilisateur}" />
+        <div class="form-group">
+            <label for="pseudo">Pseudo:</label>
+            <input type="text" id="pseudo" th:field="*{pseudo}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="nom">Nom:</label>
+            <input type="text" id="nom" th:field="*{nom}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="prenom">Prenom:</label>
+            <input type="text" id="prenom" th:field="*{prenom}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="text" id="email" th:field="*{email}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="telephone">Téléphone:</label>
+            <input type="text" id="telephone" th:field="*{telephone}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="rue">Rue:</label>
+            <input type="text" id="rue" th:field="*{rue}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="code_postal">Code Postal:</label>
+            <input type="text" id="code_postal" th:field="*{code_postal}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label for="ville">Ville:</label>
+            <input type="text" id="ville" th:field="*{ville}" class="form-control" />
+        </div>
+        <div class="form-group">
+            <input type="hidden" id="mot_de_passe" required th:field="*{mot_de_passe}" class="form-control"/>
+        </div>
+        <div class="form-group">
+            <input type="hidden" id="role" th:field="*{role}" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">Modifier Utilisateur</button>
+    </form>
+</main>
+
+<div th:replace="~{integration/scripts}"></div>
+</body>
+</html>

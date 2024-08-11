@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Utilisateurs</title>
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            thead {
+                display: none;
+            }
+            tbody tr {
+                display: block;
+                margin-bottom: 1rem;
+            }
+            tbody tr td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-top: 1px solid #ddd;
+            }
+            tbody tr td::before {
+                content: attr(data-label);
+                font-weight: bold;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5">
+    <h2>Les utilisateurs</h2>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Pseudo</th>
+            <th>Nom</th>
+            <th>Prenom</th>
+            <th>Email</th>
+            <th>Telephone</th>
+            <th>Rue</th>
+            <th>Code Postal</th>
+            <th>Ville</th>
+            <th>Mot de passe</th>
+            <th>Role</th>
+            <th sec:authorize="hasAnyAuthority('ADMIN')">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="utilisateur :${listeUtilisateurs}">
+            <td data-label="Pseudo" th:text="${utilisateur.pseudo}"></td>
+            <td data-label="Nom" th:text="${utilisateur.nom}"></td>
+            <td data-label="Prenom" th:text="${utilisateur.prenom}"></td>
+            <td data-label="Email" th:text="${utilisateur.email}"></td>
+            <td data-label="Telephone" th:text="${utilisateur.telephone}"></td>
+            <td data-label="Rue" th:text="${utilisateur.rue}"></td>
+            <td data-label="Code Postal" th:text="${utilisateur.code_postal}"></td>
+            <td data-label="Ville" th:text="${utilisateur.ville}"></td>
+            <td data-label="Mot de passe" th:text="${utilisateur.mot_de_passe}"></td>
+            <td data-label="Role" th:text="${utilisateur.role}"></td>
+            <td sec:authorize="hasAnyAuthority('ADMIN')" data-label="Actions">
+                <a class="btn btn-primary btn-sm" th:href="@{|/utilisateurs/${utilisateur.no_utilisateur}/edit|}">Modifier</a>
+                <a class="btn btn-danger btn-sm" th:href="@{|/utilisateurs/${utilisateur.no_utilisateur}/supprimer|}">Supprimer</a>
+                <a class="btn btn-info btn-sm" th:href="@{|/utilisateurs/${utilisateur.no_utilisateur}/detail|}">Détail</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<div th:replace="~{integration/scripts}"></div>
+</body>
+</html>

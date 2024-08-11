@@ -1,0 +1,269 @@
+body{
+    margin: 0;
+    display : flex;
+    flex-direction: column;
+    height: 100vh;
+}
+header {
+    display : flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 50px;
+    border-bottom: 1px solid black;
+    box-shadow: 1px 1px 1px lightgrey;
+    background-color: #fecc00;
+    color: black;
+}
+
+header #titre{
+    display: flex;
+    align-items: center;
+}
+
+header #titre img{
+    width: 50px;
+    height: 50px;
+}
+
+footer{
+    display : flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid black;
+    box-shadow: 1px 1px 1px lightgrey;
+    background-color: lightgrey;
+}
+
+nav section {
+    display: inline-block;
+}
+
+header nav ul{
+    list-style: none;
+    display: inline-block;
+    margin-right: 20px;
+}
+
+header nav ul li{
+    display: inline-block;
+    margin-right : 10px;
+}
+
+header nav ul a{
+    text-decoration: none;
+    color: black;
+}
+
+main{
+    padding : 20px;
+    flex-grow: 1; /* on met ca pour que le main laisse juste la place qu'il faut pour le header et footer*/
+}
+
+main.flex-center{
+    height : 100%;
+    display : flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+table {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table td, table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+table tr:nth-child(even){background-color: #f2f2f2;}
+
+table tr:hover {background-color: #ddd;}
+
+table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: black;
+    color: white;
+}
+
+form button, a.link-button{
+    text-decoration: none;
+    background-color: #16a085;
+    color: white;
+    padding: 5px;
+    font-size: 14px;
+    cursor: pointer;
+
+}
+
+form button{
+    border : none;
+    padding: 8px;
+    font-size: 16px;
+    margin-left: 165px;
+}
+
+nav form button{
+    background-color : red;
+    color: white;
+    margin-left: 0;
+}
+
+.form-element{
+    margin : 10px;
+}
+
+.form-element label{
+    width: 150px;
+    display: inline-block;
+}
+
+.form-element textarea, .form-element select{
+    width: 300px;
+    height: 100%;
+    display: inline-block;
+}
+
+.form-element input, .form-element textarea, .form-element select{
+    padding: 3px;
+}
+
+form#search-form{
+    margin-bottom: 15px;
+}
+
+form#search-form input{
+    padding: 3px;
+    width: 300px;
+}
+form#search-form button{
+    margin-left: 10px;
+    padding: 5px;
+}
+form#search-form .form-element{
+    margin: 5px;
+    display: inline-block;
+}
+
+form#search-form h3{
+    display : inline-block;
+}
+
+form#search-form .form-element label{
+    width: auto;
+    margin-right: 15px;
+}
+form#search-form .form-element input{
+    width: 100px;
+}
+
+form#search-form h2{
+    margin-top: 10px;
+}
+
+h1 a {
+    text-decoration: none;
+    color: black;
+}
+
+.form-element ul{
+    display: inline-block;
+}
+
+.inline-display{
+    display: inline-block;
+    margin-right: 20px ;
+}
+
+.error{
+    color: red;
+}
+
+.errors{
+    background-color: coral;
+    padding: 10px;
+    border: 1px solid red;
+    color: red;
+}
+.check{
+    font-weight: bold;
+    color: green;
+}
+
+textarea {
+    resize: none;
+}
+
+.header-title{
+    display: flex;
+    align-items: center;
+}
+
+.header-title img{
+    margin-right : 10px;
+    width : 55px;
+}
+
+.inline-title{
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.delete-form, .edit-form{
+    display: inline-block;
+}
+
+a.delete-button{
+    background-color: red;
+    font-weight: bold;
+    color : white;
+    padding: 4px 5px;
+    height: 24px;
+    margin: 3px 0;
+    font-size: 13px;
+}
+
+.valid-button{
+    border : none;
+    padding: 4px;
+    font-size: 14px;
+    background-color: darkgreen;
+    color: white;
+}
+
+.check{
+    color: forestgreen;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.edit-form button{
+    background-color: green;
+    font-weight: bold;
+    color : white;
+    padding: 3px 5px;
+    height: 20px;
+    margin: 3px 0;
+    font-size: 13px;
+}
+
+a.edit-button{
+    padding: 4px;
+    height: 23px;
+    margin: 3px 0;
+}
+
+
+.confirmation-form{
+    button{
+        background-color: red;
+    }
+    a.link-button{
+        padding: 7px;
+        font-size: 18px;
+    }
+}
