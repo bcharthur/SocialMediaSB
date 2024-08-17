@@ -1,24 +1,50 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Accueil</title>
-    <div th:replace="~{integration/links}"></div>
-
     <style>
-        .post-container {
+        body {
+            background-color: #f5f8fa;
+        }
+
+        .main-container {
+            display: flex;
+            justify-content: center;
             margin-top: 20px;
         }
-        .post-messages {
-            height: 400px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
+
+        .content-container {
             display: flex;
             flex-direction: column;
-            background-color: #f8f9fa;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
         }
+
+        .card,
+        .conversations-card,
+        .post-messages {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .post-sender a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .post-sender a:hover {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .post-messages {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+        }
+
         .post-message {
             margin-bottom: 20px;
             padding: 20px;
@@ -26,33 +52,66 @@
             border-radius: 5px;
             background-color: #ffffff;
         }
+
         .post-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
+
         .post-header img {
             border-radius: 50%;
             width: 50px;
             height: 50px;
             margin-right: 10px;
         }
+
         .post-content {
             margin-bottom: 15px;
         }
+
         .post-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
+
+        .post-footer .btn {
+            margin-bottom: 10px;
+        }
+
         .comments {
             margin-top: 10px;
         }
+
         .comment {
             border-top: 1px solid #ccc;
             padding-top: 10px;
             margin-top: 10px;
+        }
+
+        .comment-form {
+            display: flex;
+            align-items: center;
+        }
+
+        .comment-form input {
+            flex: 1;
+            margin-right: 10px;
+            border-radius: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .comment-form button {
+            padding: 8px 12px;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
 
         @media (max-width: 768px) {
@@ -60,15 +119,104 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
             .post-header img {
                 margin-bottom: 10px;
             }
+
             .post-footer {
-                flex-direction: column;
-                align-items: flex-start;
+                flex-direction: row;
+                justify-content: space-between;
             }
+
+            .conversations-card {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .content-container,
+            .card,
+            .conversations-card,
+            .post-messages {
+                max-width: 100%;
+            }
+
+            .post-message {
+                padding: 15px;
+            }
+
+            .post-header img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .post-content p {
+                font-size: 14px;
+            }
+
+            .post-footer {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
             .post-footer .btn {
+                margin-bottom: 0;
+                flex: 1;
+                display: flex;
+                justify-content: center;
+            }
+
+            .comment-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .comment-form input {
+                margin-right: 0;
                 margin-bottom: 10px;
+                width: 100%;
+            }
+
+            .comment-form button {
+                width: 100%;
+            }
+        }
+
+        .conversations-card .card-header {
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .conversations-card .card-header span {
+            font-weight: bold;
+        }
+
+        .conversations-card .card-header button {
+            border: none;
+            background: none;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .conversations-card .collapse.show {
+            transition: max-height 0.3s ease;
+        }
+
+        @media (min-width: 769px) {
+            .conversations-card .card-body {
+                max-height: 300px;
+                overflow-y: auto;
             }
         }
     </style>
@@ -77,37 +225,55 @@
 <header>
     <div th:replace="~{integration/navbar}"></div>
 </header>
-<main class="container mt-5">
-    <div class="container post-container">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card mb-3" sec:authorize="isAuthenticated()">
-                    <div class="card-body">
-                        <form id="postForm" enctype="multipart/form-data">
-                            <div class="form-group d-flex align-items-center">
-                                <img src='https://via.placeholder.com/50' alt='User Avatar' class='rounded-circle me-2'>
-                                <strong th:text="${#ctx.session.currentUser.pseudo}" class="ml-2"></strong>
-                                <input type="hidden" id="sender" name="sender" class="form-control" th:value="${#ctx.session.currentUser.pseudo}" readonly>
-                            </div>
-                            <div class="form-group">
-                                <div class="input-group">
-                                    <input type="text" id="message" name="message" placeholder="Type a message" class="form-control">
-                                    <div class="input-group-append">
-                                        <button type="submit" id="sendButton" class="btn btn-success"><i class="fas fa-paper-plane"></i> Send</button>
-                                    </div>
+<main class="container mt-5 position-relative">
+    <div class="main-container">
+        <div class="content-container">
+            <!-- Formulaire pour créer un post -->
+            <div class="card mb-3" sec:authorize="isAuthenticated()">
+                <div class="card-body">
+                    <form id="postForm" enctype="multipart/form-data">
+                        <div class="form-group d-flex align-items-center">
+                            <img src='https://via.placeholder.com/50' alt='User Avatar' class='rounded-circle me-2'>
+                            <strong th:text="${#ctx.session.currentUser.pseudo}" class="ml-2"></strong>
+                            <input type="hidden" id="sender" name="sender" class="form-control" th:value="${#ctx.session.currentUser.pseudo}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="text" id="message" name="message" placeholder="Type a message" class="form-control">
+                                <div class="input-group-append">
+                                    <button type="submit" id="sendButton" class="btn btn-success"><i class="fas fa-paper-plane"></i> Send</button>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <input type="file" id="image" name="image" class="form-control">
-                            </div>
-                        </form>
+                        </div>
+                        <div class="form-group">
+                            <input type="file" id="image" name="image" class="form-control">
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card des conversations -->
+            <div class="card conversations-card mb-3" sec:authorize="isAuthenticated()">
+                <div class="card-header" data-bs-toggle="collapse" href="#collapseConversations" role="button" aria-expanded="false" aria-controls="collapseConversations">
+                    <span>Mes Conversations</span>
+                    <button class="btn text-white" type="button">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="collapse" id="collapseConversations">
+                    <div class="card-body p-2">
+                        <ul class="list-group list-group-flush" id="active-conversations">
+                            <!-- Les conversations actives seront chargées ici -->
+                        </ul>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div id="post">
-                            <div class="post-messages" id="postMessages"></div>
-                        </div>
+            </div>
+
+            <!-- Affichage des posts -->
+            <div class="card">
+                <div class="card-body">
+                    <div id="post">
+                        <div class="post-messages" id="postMessages"></div>
                     </div>
                 </div>
             </div>
@@ -126,7 +292,14 @@
     </div>
 </main>
 
-<div th:replace="~{integration/scripts}"></div>
+<!-- jQuery, Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="https://kit.fontawesome.com/b574da12d9.js" crossorigin="anonymous"></script>
+
 <script>
     var stompClient = null;
     var messagesMap = {};
@@ -158,7 +331,7 @@
     function showPostMessage(message) {
         messagesMap[message.id] = message;
         var messagePostElement = createPostMessageElement(message);
-        $("#postMessages").prepend(messagePostElement);  // Prepend to show the most recent message at the top
+        $("#postMessages").prepend(messagePostElement);
 
         attachEventHandlers(messagePostElement, message);
     }
@@ -186,7 +359,11 @@
             "<div class='d-flex align-items-center'>" +
             "<img src='https://via.placeholder.com/50' alt='User Avatar' class='rounded-circle me-2'>" +
             "<div>" +
-            "<div class='post-sender'><strong>" + message.sender + "</strong> - <small class='text-muted'>posté y a " + timeElapsed + "</small></div>" +
+            "<div class='post-sender'>" +
+            "<a href='/utilisateurs/" + message.sender + "/detail'>" +
+            "<strong>" + message.sender + "</strong>" +
+            "</a> - <small class='text-muted'>posté y a " + timeElapsed + "</small>" +
+            "</div>" +
             "</div>" +
             "</div>" +
             "<div class='dropdown'>" +
@@ -211,20 +388,18 @@
             "</div>" +
             "<div class='comments collapse' id='comments-" + message.id + "'>" + commentsHtml + "</div>" +
             "<div class='comment-form mt-2 collapse' id='comments-form-" + message.id + "'>" +
-            "<input type='text' class='form-control comment-input mb-2' placeholder='Write a comment...'>" +
-            "<button class='btn btn-sm btn-primary submit-comment'>Comment</button>" +
+            "<input type='text' class='form-control comment-input mb-2' placeholder='Ecrivez un commentaire...'>" +
+            "<button class='btn btn-sm btn-primary submit-comment'>Ajouter</button>" +
             "</div>" +
             "</div>" +
             "</div>"
         );
 
-        // Inject Admin Buttons if user is an admin
         var adminButtons = $("#admin-buttons-template").html();
         if (adminButtons) {
             messagePostElement.find(".post-footer").append(adminButtons);
         }
 
-        // Inject Modo Buttons if user is a moderator
         var modoButtons = $("#modo-buttons-template").html();
         if (modoButtons) {
             messagePostElement.find(".post-footer").append(modoButtons);
@@ -263,7 +438,7 @@
             var commentText = element.find(".comment-input").val();
             if (commentText.trim() !== "") {
                 addComment(message.id, commentText);
-                element.find(".comment-input").val('');  // Clear input field
+                element.find(".comment-input").val('');
             }
         });
     }
@@ -287,13 +462,11 @@
                 " <span class='like-count ms-2'></span>"
             );
 
-            // Inject Admin Buttons if user is an admin
             var adminButtons = $("#admin-buttons-template").html();
             if (adminButtons) {
                 messagePostElement.find(".post-footer").append(adminButtons);
             }
 
-            // Inject Modo Buttons if user is a moderator
             var modoButtons = $("#modo-buttons-template").html();
             if (modoButtons) {
                 messagePostElement.find(".post-footer").append(modoButtons);
@@ -340,12 +513,11 @@
             url: "/api/posts/hide/" + id,
             type: "POST",
             success: function (hiddenPostMessage) {
-                // Update the content of the post to indicate it has been hidden
                 var messagePostElement = $("div.post-message[data-id='" + id + "']");
                 if (messagePostElement.length) {
                     messagePostElement.find(".post-content").html("<p>Ce post a été masqué par un modérateur</p>");
-                    messagePostElement.find(".post-content").find("img").remove(); // Remove any image
-                    messagePostElement.find(".post-footer").find(".like-button, .unlike-button, .comment-button").remove(); // Remove like and comment buttons
+                    messagePostElement.find(".post-content").find("img").remove();
+                    messagePostElement.find(".post-footer").find(".like-button, .unlike-button, .comment-button").remove();
                 }
                 updateMessageContent(hiddenPostMessage);
             },
@@ -354,7 +526,6 @@
             }
         });
     }
-
 
     function deletePostMessage(id) {
         $.ajax({
@@ -420,13 +591,13 @@
 
         connect();
 
-        var isSubmitting = false;  // Flag to prevent multiple submissions
+        var isSubmitting = false;
 
         $("#postForm").on("submit", function (e) {
             e.preventDefault();
 
             if (isSubmitting) {
-                return;  // Prevent further submissions if already submitting
+                return;
             }
 
             if (!stompClient || !stompClient.connected) {
@@ -434,10 +605,10 @@
                 return;
             }
 
-            isSubmitting = true;  // Set the flag to true
+            isSubmitting = true;
 
             var sendButton = $("#sendButton");
-            sendButton.prop("disabled", true);  // Disable the button to prevent double submission
+            sendButton.prop("disabled", true);
 
             var sender = $("#sender").val();
             var message = $("#message").val();
@@ -459,14 +630,14 @@
                 success: function (data) {
                     $("#message").val('');
                     $("#image").val('');
-                    sendButton.prop("disabled", false);  // Re-enable the button
-                    isSubmitting = false;  // Reset the flag
+                    sendButton.prop("disabled", false);
+                    isSubmitting = false;
                     stompClient.send("/app/sendPost", {}, JSON.stringify(data));
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.error("Failed to send post:", textStatus, errorThrown);
-                    sendButton.prop("disabled", false);  // Re-enable the button even if there's an error
-                    isSubmitting = false;  // Reset the flag
+                    sendButton.prop("disabled", false);
+                    isSubmitting = false;
                 }
             });
         });
@@ -476,7 +647,7 @@
             type: "GET",
             success: function (data) {
                 if (Array.isArray(data)) {
-                    data.forEach(showPostMessage);  // Show messages in the order received
+                    data.forEach(showPostMessage);
                 } else {
                     console.error("Data is not an array:", data);
                 }
@@ -486,6 +657,11 @@
             }
         });
     });
+
+    function startConversation(receiver) {
+        const sender = document.querySelector('li.nav-item.dropdown .nav-link').textContent.trim();
+        window.location.href = `/conversation/${sender}/${receiver}`;
+    }
 </script>
 </body>
 </html>

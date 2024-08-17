@@ -17,19 +17,6 @@ public class Chat {
     private String sender;
     private String receiver;
     private String message;
-    private boolean readMessage;
-
-    public Chat(String sender, long unreadCount) {
-        this.sender = sender;
-        this.unreadCount = unreadCount;
-    }
-
-    @Transient
-    private long unreadCount;
-
-    @Column(name = "status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private MessageStatus status = MessageStatus.SENDING;
 
     @CreatedDate
     private LocalDateTime createdDate;
@@ -90,34 +77,6 @@ public class Chat {
 
     public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public boolean isReadMessage() {
-        return readMessage;
-    }
-
-    public void setReadMessage(boolean readMessage) {
-        this.readMessage = readMessage;
-    }
-
-    public MessageStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(MessageStatus status) {
-        this.status = status;
-    }
-
-    public long getUnreadCount() {
-        return unreadCount;
-    }
-
-    public void setUnreadCount(long unreadCount) {
-        this.unreadCount = unreadCount;
-    }
-
-    public enum MessageStatus {
-        SENDING, SENT, READ
     }
 }
 

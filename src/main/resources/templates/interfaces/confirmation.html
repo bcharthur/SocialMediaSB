@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Confirmation</title>
     <div th:replace="~{integration/links}"></div>
@@ -33,5 +32,22 @@
     </form>
 </main>
 <div th:replace="~{integration/scripts}"></div>
+<script>
+
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/gs-guide-websocket');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+        });
+    }
+
+    $(document).ready(function () {
+        connect();   // Establish WebSocket connection
+    });
+</script>
 </body>
 </html>

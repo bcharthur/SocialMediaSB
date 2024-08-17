@@ -12,4 +12,7 @@ public interface UtilisateurService {
     Utilisateur consulterUtilisateurParPseudo(String pseudo);
     void modifierUtilisateur(Utilisateur utilisateur);
     List<Utilisateur> searchUsers(String query);
+    long countUtilisateurs();
+
+
 }

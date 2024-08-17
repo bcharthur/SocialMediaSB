@@ -22,38 +22,48 @@ public class RegisterController {
     private UtilisateurService utilisateurService;
 
     @GetMapping
-    public String getUtilisateurs(Model model) {
-        model.addAttribute("listeUtilisateurs", utilisateurService.consulterUtilisateurs());
-        return "auth/register";
-    }
-
-    @GetMapping("/creer")
     public String getUtilisateurForm(Model model) {
-        model.addAttribute("utilisateur", new Utilisateur());
-        return "auth/register";
+        if (!model.containsAttribute("utilisateur")) {
+            model.addAttribute("utilisateur", new Utilisateur());
+        }
+
+        // Ajout du nombre d'utilisateurs au modèle
+        long userCount = utilisateurService.countUtilisateurs();
+        model.addAttribute("userCount", userCount);
+
+        return "auth/auth"; // Renvoie vers la page combinée auth.html
     }
 
     @PostMapping("/creer")
     public String postUtilisateurForm(@Valid Utilisateur utilisateur, BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            return "auth/register";
+            long userCount = utilisateurService.countUtilisateurs();
+            model.addAttribute("userCount", userCount);
+            model.addAttribute("registerError", "Vérifiez les informations saisies.");
+            return "auth/auth";
         }
         try {
             utilisateurService.creerUtilisateur(utilisateur);
+            redirectAttributes.addFlashAttribute("successMessage", "Utilisateur créé avec succès.");
+            return "redirect:/login";
         } catch (DataIntegrityViolationException e) {
-            model.addAttribute("errorMessage", "Un utilisateur avec ce pseudo, email ou téléphone existe déjà.");
-            return "auth/register";
+            long userCount = utilisateurService.countUtilisateurs();
+            model.addAttribute("userCount", userCount);
+            model.addAttribute("registerError", "Un utilisateur avec ce pseudo, email ou téléphone existe déjà.");
+            return "auth/auth";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", "Une erreur inattendue s'est produite. Veuillez réessayer.");
-            return "auth/register";
+            long userCount = utilisateurService.countUtilisateurs();
+            model.addAttribute("userCount", userCount);
+            model.addAttribute("registerError", "Une erreur inattendue s'est produite. Veuillez réessayer.");
+            return "auth/auth";
         }
-        redirectAttributes.addFlashAttribute("successMessage", "Utilisateur créé avec succès.");
-        return "redirect:/";
     }
 
     @ExceptionHandler(Exception.class)
     public String handleAllExceptions(Exception ex, Model model) {
-        model.addAttribute("errorMessage", "Une erreur s'est produite. Veuillez réessayer.");
-        return "auth/register";
+        long userCount = utilisateurService.countUtilisateurs();
+        model.addAttribute("userCount", userCount);
+        model.addAttribute("registerError", "Une erreur s'est produite. Veuillez réessayer.");
+        return "auth/auth";
     }
 }

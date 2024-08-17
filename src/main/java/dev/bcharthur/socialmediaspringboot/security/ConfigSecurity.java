@@ -17,11 +17,19 @@ public class ConfigSecurity {
             auth.requestMatchers(HttpMethod.GET, "/").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/index").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/integration").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/navbar/**").permitAll();
+            auth.requestMatchers(HttpMethod.POST, "/navbar/**").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/navbar").permitAll();
+            auth.requestMatchers(HttpMethod.POST, "/navbar").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/login/**").permitAll();
             auth.requestMatchers(HttpMethod.POST, "/login/**").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/register/**").permitAll();
             auth.requestMatchers(HttpMethod.POST, "/register/**").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/auth/**").permitAll();
+            auth.requestMatchers(HttpMethod.POST, "/auth/**").permitAll();
+
+            auth.requestMatchers(HttpMethod.GET, "/utilisateurs/{pseudo}/detail").permitAll();
+
 
             // Allow viewing posts without authentication
             auth.requestMatchers(HttpMethod.GET, "/post/**").permitAll();

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Authentication</title>
+    <div th:replace="~{integration/links}"></div>
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 90%;
+            }
+            h2 {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            input[type="submit"],
+            .btn-secondary {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Style for mobile screens */
+        @media (max-width: 576px) {
+            .modal-content {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div th:replace="~{integration/navbar}"></div>
+</header>
+<main class="container mt-5 text-center">
+    <h2>Bienvenue !</h2>
+    <p>Connectez-vous ou inscrivez-vous pour continuer.</p>
+    <p>Rejoignez <span th:text="${userCount}">0</span> utilisateurs enregistrés !</p>
+
+    <button class="btn btn-primary" id="loginBtn">Connexion</button>
+    <button class="btn btn-secondary" id="registerBtn">Inscription</button>
+</main>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeLogin">&times;</span>
+        <h2>Connexion</h2>
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" autofocus="autofocus" required />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required />
+            </div>
+            <br>
+            <div class="form-group">
+                <input type="submit" value="Connexion" class="btn btn-primary"/>
+                <a class="btn btn-secondary" data-th-href="@{/}">Accueil</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeRegister">&times;</span>
+        <h2>Inscription</h2>
+        <form th:action="@{/register/creer}" th:object="${utilisateur}" method="post">
+            <input type="hidden" id="no_utilisateur" th:field="*{no_utilisateur}"/>
+
+            <div class="form-group">
+                <label for="pseudo">Pseudo:</label>
+                <input type="text" id="pseudo" th:field="*{pseudo}" class="form-control" th:classappend="${#fields.hasErrors('pseudo')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('pseudo')}" th:errors="*{pseudo}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="nom">Nom:</label>
+                <input type="text" id="nom" th:field="*{nom}" class="form-control" th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="prenom">Prenom:</label>
+                <input type="text" id="prenom" th:field="*{prenom}" class="form-control" th:classappend="${#fields.hasErrors('prenom')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('prenom')}" th:errors="*{prenom}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" th:field="*{email}" class="form-control" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="telephone">Téléphone:</label>
+                <input type="text" id="telephone" th:field="*{telephone}" class="form-control" th:classappend="${#fields.hasErrors('telephone')} ? 'is-invalid' : ''"/>
+                <div class="text-danger" th:if="${#fields.hasErrors('telephone')}" th:errors="*{telephone}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="rue">Rue:</label>
+                <input type="text" id="rue" th:field="*{rue}" class="form-control" th:classappend="${#fields.hasErrors('rue')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('rue')}" th:errors="*{rue}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="code_postal">Code Postal:</label>
+                <input type="text" id="code_postal" th:field="*{code_postal}" class="form-control" th:classappend="${#fields.hasErrors('code_postal')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('code_postal')}" th:errors="*{code_postal}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="ville">Ville:</label>
+                <input type="text" id="ville" th:field="*{ville}" class="form-control" th:classappend="${#fields.hasErrors('ville')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('ville')}" th:errors="*{ville}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="mot_de_passe">Mot de Passe:</label>
+                <input type="password" id="mot_de_passe" th:field="*{mot_de_passe}" class="form-control" th:classappend="${#fields.hasErrors('mot_de_passe')} ? 'is-invalid' : ''" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('mot_de_passe')}" th:errors="*{mot_de_passe}"></div>
+            </div>
+            <br>
+            <input type="hidden" id="role" name="role" th:value="${role != null ? role : 'USER'}"/>
+            <button type="submit" class="btn btn-primary">S'inscrire</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Get modals and buttons
+    var loginModal = document.getElementById('loginModal');
+    var registerModal = document.getElementById('registerModal');
+    var loginBtn = document.getElementById('loginBtn');
+    var registerBtn = document.getElementById('registerBtn');
+    var closeLogin = document.getElementById('closeLogin');
+    var closeRegister = document.getElementById('closeRegister');
+
+    // When the user clicks on the button, open the modal
+    loginBtn.onclick = function() {
+        loginModal.style.display = "block";
+    }
+    registerBtn.onclick = function() {
+        registerModal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    closeLogin.onclick = function() {
+        loginModal.style.display = "none";
+    }
+    closeRegister.onclick = function() {
+        registerModal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == loginModal) {
+            loginModal.style.display = "none";
+        }
+        if (event.target == registerModal) {
+            registerModal.style.display = "none";
+        }
+    }
+</script>
+</body>
+</html>

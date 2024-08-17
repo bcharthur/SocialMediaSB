@@ -20,7 +20,7 @@ public class UtilisateursController {
     UtilisateurService utilisateurService;
 
     @Autowired
-    PostService postService;  // Injection du PostService
+    PostService postService;
     @Autowired
     private CommentService commentService;
 
@@ -84,9 +84,9 @@ public class UtilisateursController {
         return "redirect:/utilisateurs";
     }
 
-    @GetMapping("/{utilisateurId}/detail")
-    public String getUtilisateurDetailForm(@PathVariable("utilisateurId") int utilisateurId, Model model) {
-        Utilisateur utilisateur = utilisateurService.consulterUtilisateurParId(utilisateurId);
+    @GetMapping("/{pseudo}/detail")
+    public String getUtilisateurDetailForm(@PathVariable("pseudo") String pseudo, Model model) {
+        Utilisateur utilisateur = utilisateurService.consulterUtilisateurParPseudo(pseudo);
         model.addAttribute("utilisateur", utilisateur);
 
         // Ajoute les messages postés et les messages likés

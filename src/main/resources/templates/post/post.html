@@ -1,9 +1,8 @@
-<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="_csrf" th:content="${_csrf.token}">
-    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+<!--    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">-->
+<!--    <meta name="_csrf" th:content="${_csrf.token}">-->
+<!--    <meta name="_csrf_header" th:content="${_csrf.headerName}">-->
     <title>Post Application</title>
 
     <div th:replace="~{integration/links}"></div>
@@ -197,7 +196,7 @@
             "</div>" +
             "<div class='comments'>" + commentsHtml + "</div>" +
             "<div class='comment-form'>" +
-            "<input type='text' class='form-control comment-input' placeholder='Write a comment...'>" +
+            "<input type='text' class='form-control comment-input' placeholder='Ecrivez un commentaire...'>" +
             "<button class='btn btn-sm btn-primary submit-comment'>Comment</button>" +
             "</div>" +
             "</div>");

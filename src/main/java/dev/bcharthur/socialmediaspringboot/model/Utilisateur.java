@@ -5,11 +5,17 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = "pseudo"),
         @UniqueConstraint(columnNames = "email"),
@@ -53,7 +59,15 @@ public class Utilisateur {
     @NotNull
     private String role;
 
-    public Utilisateur(String pseudo, String nom, String prenom, String email, String telephone, String rue, String code_postal, String ville, String mot_de_passe, String role) {
+    @CreatedDate
+    @Column(updatable = false)  // createdDate ne devrait pas être mis à jour
+    private LocalDateTime createdDate;
+
+    @LastModifiedDate
+    private LocalDateTime lastModifiedDate;
+
+
+    public Utilisateur(String pseudo, String nom, String prenom, String email, String telephone, String rue, String code_postal, String ville, String mot_de_passe, String role, LocalDateTime createdDate, LocalDateTime lastModifiedDate ) {
         this.pseudo = pseudo;
         this.nom = nom;
         this.prenom = prenom;
@@ -64,5 +78,9 @@ public class Utilisateur {
         this.ville = ville;
         this.mot_de_passe = mot_de_passe;
         this.role = role;
+        this.createdDate = LocalDateTime.now();
+        this.lastModifiedDate = LocalDateTime.now();
     }
+
+
 }

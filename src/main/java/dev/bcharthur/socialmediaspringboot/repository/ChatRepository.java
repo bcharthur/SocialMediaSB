@@ -21,13 +21,6 @@ public interface ChatRepository extends JpaRepository<Chat, Long> {
             "UNION SELECT DISTINCT c.receiver FROM Chat c WHERE c.sender = :currentUser")
     List<String> findActiveConversations(@Param("currentUser") String currentUser);
 
-    @Query("SELECT COUNT(c) FROM Chat c WHERE c.receiver = :receiver AND c.sender = :sender AND c.readMessage = false")
-    int countUnreadMessages(@Param("receiver") String receiver, @Param("sender") String sender);
-
-    @Modifying
-    @Query("UPDATE Chat c SET c.readMessage = true WHERE c.receiver = :receiver AND c.sender = :sender AND c.readMessage = false")
-    void markMessagesAsRead(@Param("sender") String sender, @Param("receiver") String receiver);
-
     @Query("SELECT DISTINCT c.sender FROM Chat c WHERE c.receiver = :receiver")
     List<String> findDistinctSenders(@Param("receiver") String receiver);
 

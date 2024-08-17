@@ -64,4 +64,11 @@ public class UtilisateurServiceJpa implements UtilisateurService {
     public List<Utilisateur> searchUsers(String query) {
         return utilisateurRepository.findByPseudoContainingIgnoreCase(query);
     }
+
+    @Override
+    public long countUtilisateurs() {
+        return utilisateurRepository.count();
+    }
+
+
 }

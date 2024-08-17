@@ -2,6 +2,7 @@ package dev.bcharthur.socialmediaspringboot.repository;
 
 import dev.bcharthur.socialmediaspringboot.model.Utilisateur;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
